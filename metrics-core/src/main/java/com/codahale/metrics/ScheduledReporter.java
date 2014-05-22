@@ -6,11 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.util.Locale;
 import java.util.SortedMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -22,7 +18,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @see Slf4jReporter
  */
 public abstract class ScheduledReporter implements Closeable {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ScheduledReporter.class);
+
     /**
      * A simple named thread factory.
      */
@@ -30,6 +28,7 @@ public abstract class ScheduledReporter implements Closeable {
     private static class NamedThreadFactory implements ThreadFactory {
         private final ThreadGroup group;
         private final AtomicInteger threadNumber = new AtomicInteger(1);
+
         private final String namePrefix;
 
         private NamedThreadFactory(String name) {
@@ -37,7 +36,6 @@ public abstract class ScheduledReporter implements Closeable {
             this.group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
             this.namePrefix = "metrics-" + name + "-thread-";
         }
-
         @Override
         public Thread newThread(Runnable r) {
             final Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
@@ -57,17 +55,10 @@ public abstract class ScheduledReporter implements Closeable {
     private final double rateFactor;
     private final String rateUnit;
 
-    private Future scheduledReportingJob;
+    private final String taskName;
     private final Object futureLock = new Object();
+    private Future scheduledReportingJob;
 
-    /**
-     * Creates a new {@link ScheduledReporter} instance.
-     *
-     * @param registry the {@link com.codahale.metrics.MetricRegistry} containing the metrics this
-     *                 reporter will report
-     * @param name     the reporter's name
-     * @param filter   the filter for which metrics to report
-     */
     protected ScheduledReporter(MetricRegistry registry,
                                 String name,
                                 MetricFilter filter,
@@ -75,11 +66,42 @@ public abstract class ScheduledReporter implements Closeable {
                                 TimeUnit durationUnit) {
         this.registry = registry;
         this.filter = filter;
-        this.executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(name));
+        this.executor = createExecutorService(name);
         this.rateFactor = rateUnit.toSeconds(1);
         this.rateUnit = calculateRateUnit(rateUnit);
         this.durationFactor = 1.0 / durationUnit.toNanos(1);
         this.durationUnit = durationUnit.toString().toLowerCase(Locale.US);
+        this.taskName = createTaskName();
+    }
+
+    protected ScheduledReporter(MetricRegistry registry,
+                                ScheduledExecutorService executor,
+                                MetricFilter filter,
+                                TimeUnit rateUnit,
+                                TimeUnit durationUnit) {
+        this.registry = registry;
+        this.filter = filter;
+
+        if (executor != null) {
+            this.executor = executor;
+
+        } else {
+            this.executor = createExecutorService(getClass().getSimpleName());
+        }
+
+        this.rateFactor = rateUnit.toSeconds(1);
+        this.rateUnit = calculateRateUnit(rateUnit);
+        this.durationFactor = 1.0 / durationUnit.toNanos(1);
+        this.durationUnit = durationUnit.toString().toLowerCase(Locale.US);
+        this.taskName = createTaskName();
+    }
+
+    private ScheduledExecutorService createExecutorService(String name) {
+        return Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(name));
+    }
+
+    private String createTaskName() {
+        return String.format("%s.report", this.getClass().getCanonicalName());
     }
 
     /**
@@ -89,18 +111,21 @@ public abstract class ScheduledReporter implements Closeable {
      * @param unit   the unit for {@code period}
      */
     public void start(long period, TimeUnit unit) {
-        synchronized (futureLock){
-            if(scheduledReportingJob != null){
+        synchronized (futureLock) {
+            if (scheduledReportingJob != null) {
                 stop();
             }
 
-            if(executor.isShutdown()){
+            if (executor.isShutdown()) {
                 throw new IllegalStateException("Metric Reporter has been shut down.");
             }
+
             scheduledReportingJob = executor.scheduleAtFixedRate(new Runnable() {
-                @Override
                 public void run() {
                     report();
+                }
+                public String toString() {
+                    return taskName;
                 }
             }, period, period, unit);
         }
@@ -110,8 +135,8 @@ public abstract class ScheduledReporter implements Closeable {
      * Stops the reporter.
      */
     public void stop() {
-        synchronized (futureLock){
-            if(scheduledReportingJob != null){
+        synchronized (futureLock) {
+            if (scheduledReportingJob != null) {
                 scheduledReportingJob.cancel(false);
                 scheduledReportingJob = null;
             }
@@ -121,9 +146,8 @@ public abstract class ScheduledReporter implements Closeable {
     /**
      * Stops the reporter and shuts down its thread of execution.
      */
-    @Override
     public void close() {
-        synchronized (futureLock){
+        synchronized (futureLock) {
             stop();
             executor.shutdown();
             try {
@@ -144,9 +168,8 @@ public abstract class ScheduledReporter implements Closeable {
                     registry.getHistograms(filter),
                     registry.getMeters(filter),
                     registry.getTimers(filter));
-        } catch (Exception e){
-            registry.meter("MetricReporting.Errors");
-            LOGGER.error("Error reporting metrics.", e);
+        } catch (Exception e) {
+            LOGGER.error("Error reporting metrics", e);
         }
     }
 
@@ -185,4 +208,5 @@ public abstract class ScheduledReporter implements Closeable {
         final String s = unit.toString().toLowerCase(Locale.US);
         return s.substring(0, s.length() - 1);
     }
+
 }
