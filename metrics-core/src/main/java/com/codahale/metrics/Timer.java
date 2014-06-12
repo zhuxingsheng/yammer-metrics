@@ -14,22 +14,12 @@ public class Timer implements Metered, Sampling {
      *
      * @see Timer#time()
      */
-    public interface Context extends Closeable {
-
-        /**
-         * Stops recording the elapsed time, updates the timer and returns the elapsed time in
-         * nanoseconds.
-         */
-        public long stop();
-
-    }
-
-    public static class ContextImpl implements Context {
+    public static class Context implements Closeable {
         private final Timer timer;
         private final Clock clock;
         private final long startTime;
 
-        private ContextImpl(Timer timer, Clock clock) {
+        private Context(Timer timer, Clock clock) {
             this.timer = timer;
             this.clock = clock;
             this.startTime = clock.getTick();
@@ -119,7 +109,7 @@ public class Timer implements Metered, Sampling {
      * @see Context
      */
     public Context time() {
-        return new ContextImpl(this, clock);
+        return new Context(this, clock);
     }
 
     @Override
