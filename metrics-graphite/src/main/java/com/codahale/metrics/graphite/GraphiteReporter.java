@@ -185,6 +185,7 @@ public class GraphiteReporter extends ScheduledReporter {
                 return connectDurationMS.getAndSet(0);
             }
         };
+        registry.remove("GraphiteReporter.connectDurationMS");
         registry.register("GraphiteReporter.connectDurationMS", connectionGauge);
 
         final Gauge<Long> publishGauge = new Gauge<Long>() {
@@ -198,6 +199,7 @@ public class GraphiteReporter extends ScheduledReporter {
                 return publishDurationMS.getAndSet(0);
             }
         };
+        registry.remove("GraphiteReporter.publishDurationMS");
         registry.register("GraphiteReporter.publishDurationMS", publishGauge);
 
         final Gauge<Long> payloadGauge = new Gauge<Long>() {
@@ -206,6 +208,7 @@ public class GraphiteReporter extends ScheduledReporter {
                 return payloadSize.getAndSet(0);
             }
         };
+        registry.remove("GraphiteReporter.networkPayloadBytes");
         registry.register("GraphiteReporter.networkPayloadBytes", payloadGauge);
     }
 
