@@ -7,7 +7,7 @@
 
     <groupId>com.codahale.metrics</groupId>
     <artifactId>metrics-parent</artifactId>
-    <version>3.0.2-FORKED-1</version>
+    <version>3.0.2-FORKED-2</version>
     <packaging>pom</packaging>
     <name>Yammer Metrics Fork</name>
     <description>
