@@ -1,0 +1,22 @@
+machine:
+  timezone: America/Phoenix
+  java:
+    version: oraclejdk8
+  environment:
+    MAVEN_OPTS: "-Xms64m -Xmx2g -XX:MaxPermSize=512m"
+dependencies:
+  cache_directories:
+    - apache-maven-3.3.9
+    - jdk1.8.0_74
+  pre:
+    - mkdir -p ${HOME}/.m2 && echo ${MAVEN_SETTINGS} | base64 --decode > ${HOME}/.m2/settings.xml
+  override:
+    - mvn install
+test:
+  override:
+    - mvn test
+deployment:
+  master:
+    branch: master
+    commands:
+      - mvn deploy
