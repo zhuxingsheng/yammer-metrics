@@ -41,7 +41,7 @@
     <jackson.version>2.2.2</jackson.version>
     <jetty8.version>8.1.11.v20130520</jetty8.version>
     <jetty9.version>9.0.4.v20130625</jetty9.version>
-    <repository.url>https://scm.infusiontest.com/nexus/content/repositories/thirdparty</repository.url>
+    <repository.url>https://infusionsoft.jfrog.io/infusionsoft/third-party-builds</repository.url>
   </properties>
   <developers>
     <developer>
