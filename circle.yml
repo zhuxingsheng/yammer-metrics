@@ -4,7 +4,7 @@ machine:
     version: oraclejdk8
   environment:
     MAVEN_VERSION: 3.3.3
-    MAVEN_OPTS: "-Xms64m -Xmx2g -XX:MaxPermSize=512m"
+    MAVEN_OPTS: "-Xms64m -Xmx3g -XX:MaxPermSize=512m"
     M2_HOME: $HOME/$CIRCLE_PROJECT_REPONAME/apache-maven-${MAVEN_VERSION}
     M2: $HOME/$CIRCLE_PROJECT_REPONAME/apache-maven-${MAVEN_VERSION}/bin
     JAVA_HOME: $HOME/$CIRCLE_PROJECT_REPONAME/jdk1.8.0_74
