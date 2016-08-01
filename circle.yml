@@ -1,0 +1,27 @@
+machine:
+  timezone: America/Phoenix
+  java:
+    version: oraclejdk8
+  environment:
+    MAVEN_VERSION: 3.3.3
+    MAVEN_OPTS: "-Xms64m -Xmx3g -XX:MaxPermSize=512m"
+    M2_HOME: $HOME/$CIRCLE_PROJECT_REPONAME/apache-maven-${MAVEN_VERSION}
+    M2: $HOME/$CIRCLE_PROJECT_REPONAME/apache-maven-${MAVEN_VERSION}/bin
+    JAVA_HOME: $HOME/$CIRCLE_PROJECT_REPONAME/jdk1.8.0_74
+dependencies:
+  cache_directories:
+    - apache-maven-3.3.3
+    - jdk1.8.0_74
+  override:
+    - './circle/dependency.sh'
+test:
+  override:
+    - './circle/test.sh'
+  post:
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+deployment:
+  master:
+    branch: master
+    commands:
+      - './circle/deploy.sh'
