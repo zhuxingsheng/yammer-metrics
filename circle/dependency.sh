@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [[ ! -e apache-maven-${MAVEN_VERSION} ]]
 then
   wget https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
