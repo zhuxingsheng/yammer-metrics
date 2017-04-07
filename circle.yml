@@ -12,6 +12,8 @@ dependencies:
   cache_directories:
     - apache-maven-3.3.3
     - jdk1.8.0_74
+  pre:
+    - curl "https://storage.googleapis.com/circle-scripts/latest/init.sh" | bash
   override:
     - './circle/dependency.sh'
 test:
