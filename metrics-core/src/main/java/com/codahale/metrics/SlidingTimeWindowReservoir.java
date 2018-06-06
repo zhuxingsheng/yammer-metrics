@@ -39,6 +39,7 @@ public class SlidingTimeWindowReservoir implements Reservoir {
      */
     public SlidingTimeWindowReservoir(long window, TimeUnit windowUnit, Clock clock) {
         this.clock = clock;
+        //一个并发安全skip list有序
         this.measurements = new ConcurrentSkipListMap<Long, Long>();
         this.window = windowUnit.toNanos(window) * COLLISION_BUFFER;
         this.lastTick = new AtomicLong();
@@ -65,9 +66,14 @@ public class SlidingTimeWindowReservoir implements Reservoir {
         return new Snapshot(measurements.values());
     }
 
+    /**
+     * 获取map的key,以时间纳秒值为key
+     * @return
+     */
     private long getTick() {
         for (; ; ) {
             final long oldTick = lastTick.get();
+            //每纳秒处理的请求很多，减少compareAndSet的失败次数，这儿*COLLISION_BUFFER
             final long tick = clock.getTick() * COLLISION_BUFFER;
             // ensure the tick is strictly incrementing even if there are duplicate ticks
             final long newTick = tick > oldTick ? tick : oldTick + 1;
@@ -78,6 +84,7 @@ public class SlidingTimeWindowReservoir implements Reservoir {
     }
 
     private void trim() {
+        //清除window之前的计数
         measurements.headMap(getTick() - window).clear();
     }
 }
